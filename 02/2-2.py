@@ -17,6 +17,7 @@ ratings = ratings.drop('timestamp', axis=1)
 
 #movie_id , title만 남기기
 movies = movies[['movie_id','title']]
+movies = movies.set_index('movie_id')
 
 #train test set 분리
 from sklearn.model_selection import train_test_split
