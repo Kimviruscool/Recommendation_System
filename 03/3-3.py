@@ -126,4 +126,36 @@ user_similarity = pd.DataFrame(user_similarity, index=rating_matrix.index, colum
 for neighbor_size in [10, 20, 30, 40, 50, 60]:
     print("Neighbor size = %d : RMSE = %.4f" % (neighbor_size, score(cf_knn, neighbor_size)))
 
-rating_mean = rating_matrix.mnean(axis=1)
+rating_mean = rating_matrix.mean(axis=1)
+rating_bias = (rating_matrix.T - rating_mean).T
+
+def cf_knn_bias(user_id,movie_id,neighbor_size=0):
+    if movie_id in rating_bias :
+        sim_scores = user_similarity[user_id].copy()
+        movie_ratings = rating_bias[movie_id].copy()
+        none_rating_idx = movie_ratings[movie_ratings.isnull()].index
+        movie_ratings = movie_ratings.drop(none_rating_idx)
+        sim_scores = sim_scores.drop(none_rating_idx)
+
+        if neighbor_size == 0:
+            prediction = np.dot(sim_scores.movie_ratings) / sim_scores.sum()
+            prediction = prediction + rating_mean[user_id]
+
+        else :
+            if len(sim_scores) > 1:
+                neightor_size = min(neighbor_size, len(sim_scores))
+                sim_scores = np.array(sim_scores)
+                movie_ratings = np.array(movie_ratings)
+                user_idx = np.argsort(sim_scores)
+                sim_scores = sim_scores[user_idx][-neighbor_size:]
+                movie_ratings = movie_ratings[user_idx][-neightor_size:]
+                prediction = np.dot(sim_scores, movie_ratings) / sim_scores.sum()
+                prediction = prediction + rating_mean[user_id]
+            else :
+                prediction = rating_mean[user_id]
+
+    else :
+        prediction = rating_mean[user_id]
+    return  prediction
+
+print(score(cf_knn_bias, 30))
